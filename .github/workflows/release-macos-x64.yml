@@ -75,8 +75,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          starrocks-profile-analyzer-macos-x64.tar.gz
-          starrocks-profile-analyzer-macos-x64.tar.gz.sha256
+          release/starrocks-profile-analyzer-macos-x64.tar.gz
+          release/starrocks-profile-analyzer-macos-x64.tar.gz.sha256
         name: Release ${{ steps.get_tag.outputs.TAG_NAME }}
         draft: false
         prerelease: false
