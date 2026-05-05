@@ -1,0 +1,84 @@
+name: Build macOS x64 Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos-x64:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        targets: x86_64-apple-darwin
+
+    - name: Generate Cargo.lock if missing
+      run: |
+        if [ ! -f "Cargo.lock" ]; then
+          echo "Generating Cargo.lock..."
+          cargo generate-lockfile
+        fi
+
+    - name: Cache Cargo Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install npm dependencies
+      run: |
+        cd frontend && npm ci
+
+    - name: Build frontend
+      run: |
+        cd frontend && npm run build
+
+    - name: Build backend release binary
+      run: |
+        cargo build --release --target x86_64-apple-darwin
+        mkdir -p release
+        cp target/x86_64-apple-darwin/release/starrocks-profile-analyzer release/
+
+    - name: Create tar archive and checksum
+      run: |
+        cd release
+        tar -czf starrocks-profile-analyzer-macos-x64.tar.gz starrocks-profile-analyzer
+        shasum -a 256 starrocks-profile-analyzer-macos-x64.tar.gz > starrocks-profile-analyzer-macos-x64.tar.gz.sha256
+        echo "Archive created: starrocks-profile-analyzer-macos-x64.tar.gz"
+        echo "Checksum:"
+        cat starrocks-profile-analyzer-macos-x64.tar.gz.sha256
+        ls -lh release/*
+
+    - name: Get tag name
+      id: get_tag
+      run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          release/starrocks-profile-analyzer-macos-x64.tar.gz
+          release/starrocks-profile-analyzer-macos-x64.tar.gz.sha256
+        name: Release ${{ steps.get_tag.outputs.TAG_NAME }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
