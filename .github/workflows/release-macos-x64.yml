@@ -66,7 +66,6 @@ jobs:
         echo "Archive created: starrocks-profile-analyzer-macos-x64.tar.gz"
         echo "Checksum:"
         cat starrocks-profile-analyzer-macos-x64.tar.gz.sha256
-        ls -lh release/*
 
     - name: Get tag name
       id: get_tag
@@ -76,8 +75,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          release/starrocks-profile-analyzer-macos-x64.tar.gz
-          release/starrocks-profile-analyzer-macos-x64.tar.gz.sha256
+          starrocks-profile-analyzer-macos-x64.tar.gz
+          starrocks-profile-analyzer-macos-x64.tar.gz.sha256
         name: Release ${{ steps.get_tag.outputs.TAG_NAME }}
         draft: false
         prerelease: false
